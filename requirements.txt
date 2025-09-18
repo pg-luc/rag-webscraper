@@ -5,4 +5,5 @@ langchain-text-splitters
 langchain-ollama
 langchain-chroma
 "ollama run gemma3:1b" # this is the LLM
+#ollama run qwen3:1.7b # this is the LLM
 "ollama pull all-minilm:22m" # this is the LLM that will do the vector embeddings

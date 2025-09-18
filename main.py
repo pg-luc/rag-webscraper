@@ -9,29 +9,57 @@ from langchain_ollama.llms import OllamaLLM
 
 urls = ["https://pythonology.eu/using-pandas_ta-to-generate-technical-indicators-and-signals",]
 
-# This is to load the documents
-bs4_strainer = bs4.SoupStrainer(class_=("content-area"))
-loader = WebBaseLoader(
-    web_paths=(urls[0],),
-    bs_kwargs={"parse_only": bs4_strainer}
-)
-docs = loader.load()
+def web_scrape(urls):
+    # This is to load the documents
+    print("Loading the documents...")
+    bs4_strainer = bs4.SoupStrainer(class_=("content-area"))
+    loader = WebBaseLoader(
+        web_paths=(urls[0],),
+        bs_kwargs={"parse_only": bs4_strainer}
+    )
+    docs = loader.load()
+    return docs
 
 # this is to split the documents into chunks
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1200, chunk_overlap=100, add_start_index=True
-)
-all_splits = text_splitter.split_documents(docs)
+def text_split(docs):
+    print("Splitting the documents...")
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1200, chunk_overlap=100, add_start_index=True
+    )
+    all_splits = text_splitter.split_documents(docs)
+    return all_splits
 
 # this is to create the embeddings model to use
+print("Creating the embeddings model...")
 embeddings = OllamaEmbeddings(model="all-minilm:22m") # this is the model that will do the vector embeddings
 
 # this is to create the vector database
-vectordb = Chroma.from_documents(
-    documents=all_splits,
-    embedding=embeddings,
-    collection_name="first_collection",
-)
+def create_vectordb(all_splits, embeddings):
+    print("Embedding documents and creating vectorDB...")
+    vectordb = Chroma.from_documents(
+        documents=all_splits,
+        embedding=embeddings,
+        collection_name="first_collection",
+    )
+    return vectordb
+
+# this is to create the vector database
+def load_vectordb(embeddings):
+    print("Loading existing vectorDB...")
+    vectordb = Chroma(
+        collection_name="first_collection",
+        embedding_function=embeddings,
+        persist_directory="./chromadb_persist",
+    )
+    return vectordb
+
+# this is to run the functions to create or load the vector database
+if not os.path.exists("./chromadb_persist"):
+    documents = web_scrape(urls)
+    all_splits = text_split(documents)
+    vectordb = create_vectordb(all_splits, embeddings)
+else:
+    vectordb = load_vectordb(embeddings)
 
 # this is to create the retriever to use the vector database
 question = "What is a strategy I can easily implement to improve my trading?"
